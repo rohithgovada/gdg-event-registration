@@ -24,6 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const ticketModal = document.getElementById('ticketModal');
   const closeTicketBtn = document.getElementById('closeTicketBtn');
   const printTicketBtn = document.getElementById('printTicketBtn');
+  const copyTicketBtn = document.getElementById('copyTicketBtn');
+  const copyBtnText = document.getElementById('copyBtnText');
+  let currentTicketData = null;
 
   // Lookup Elements
   const lookupModal = document.getElementById('lookupModal');
@@ -171,6 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           // Reset form
           regForm.reset();
+          
           // Reset custom year pill
           yearPills.forEach(p => {
             p.classList.remove('bg-blue-600', 'text-white', 'border-blue-500');
@@ -178,6 +182,16 @@ document.addEventListener('DOMContentLoaded', () => {
           });
           yearPills[0].classList.add('bg-blue-600', 'text-white', 'border-blue-500');
           yearInput.value = '1st Year';
+
+          // Reset custom track cards
+          trackCards.forEach(c => {
+            c.classList.remove('selected-tech', 'selected-nontech', 'selected-both', 'ring-2');
+          });
+          const defaultBothCard = document.querySelector('.track-option-card[data-track="Both Tracks"]');
+          if (defaultBothCard) {
+            defaultBothCard.classList.add('selected-both', 'ring-2', 'ring-amber-500');
+          }
+          trackInput.value = 'Both Tracks';
 
           // Open Modal
           ticketModal.classList.remove('hidden');
@@ -218,10 +232,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Generate dynamic QR Code placeholder
+    currentTicketData = data;
+
+    // Generate dynamic QR Code placeholder with fallback
     const qrImg = document.getElementById('ticketQrCode');
     if (qrImg) {
       const qrData = encodeURIComponent(`GDG-PASS:${data.ticketId}|ROLL:${data.rollNo}|NAME:${data.fullName}`);
+      qrImg.onerror = () => {
+        qrImg.onerror = null;
+        qrImg.src = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230f172a"/><rect x="15" y="15" width="25" height="25" fill="%234285F4"/><rect x="60" y="15" width="25" height="25" fill="%23EA4335"/><rect x="15" y="60" width="25" height="25" fill="%23FBBC05"/><rect x="60" y="60" width="25" height="25" fill="%2334A853"/><text x="50" y="54" fill="white" font-family="monospace" font-size="8" text-anchor="middle" font-weight="bold">${data.ticketId}</text></svg>`;
+      };
       qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${qrData}&color=ffffff&bgcolor=0f172a`;
     }
   }
@@ -285,6 +305,53 @@ document.addEventListener('DOMContentLoaded', () => {
       window.print();
     });
   }
+
+  if (copyTicketBtn) {
+    copyTicketBtn.addEventListener('click', () => {
+      if (!currentTicketData) return;
+      const summaryText = `🎟️ GDG CAMPUS TECH FUSION 2026 - EVENT PASS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Ticket ID : ${currentTicketData.ticketId}
+Student   : ${currentTicketData.fullName}
+Roll No   : ${currentTicketData.rollNo}
+Branch    : ${currentTicketData.branch}
+Year      : ${currentTicketData.year}
+Track     : ${currentTicketData.track}
+Venue     : College Auditorium & Labs
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Show this pass with your College ID at entry!`;
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(summaryText).then(() => {
+          if (copyBtnText) copyBtnText.textContent = 'Copied!';
+          setTimeout(() => {
+            if (copyBtnText) copyBtnText.textContent = 'Copy';
+          }, 2000);
+        });
+      } else {
+        alert(summaryText);
+      }
+    });
+  }
+
+  // Close modals on clicking background backdrop
+  [ticketModal, lookupModal].forEach(modal => {
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.add('hidden');
+        }
+      });
+    }
+  });
+
+  // Close modals on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (ticketModal) ticketModal.classList.add('hidden');
+      if (lookupModal) lookupModal.classList.add('hidden');
+    }
+  });
 
   // ----------------- LOOKUP MODAL ----------------- //
   if (openLookupBtn) {

@@ -19,6 +19,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 const dbPath = path.join(__dirname, 'registrations.db');
 const db = new Database(dbPath);
 
+// Enable WAL Mode & busy timeout to prevent "database is locked" glitches under concurrent load
+db.pragma('journal_mode = WAL');
+db.pragma('busy_timeout = 5000');
+
 // Initialize DB Tables
 db.exec(`
   CREATE TABLE IF NOT EXISTS registrations (
@@ -318,7 +322,7 @@ app.get('/api/admin/export-csv', verifyAdmin, (req, res) => {
 
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.status(200).send(csvContent);
+    res.status(200).send('\uFEFF' + csvContent);
   } catch (err) {
     console.error('CSV export error:', err);
     res.status(500).send('Failed to generate CSV export.');

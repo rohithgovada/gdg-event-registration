@@ -228,6 +228,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Auto-refresh every 30 seconds to keep live counts synchronized during rush
+  setInterval(() => {
+    if (currentAdminKey && !dashboardSection.classList.contains('hidden')) {
+      loadRegistrations();
+    }
+  }, 30000);
+
   // ----------------- CSV EXPORT ----------------- //
   if (exportBtn) {
     exportBtn.addEventListener('click', () => {
