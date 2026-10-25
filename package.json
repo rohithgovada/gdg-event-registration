@@ -1,0 +1,26 @@
+{
+  "name": "gdg-event-registration",
+  "version": "1.0.0",
+  "description": "Interactive, animated event registration platform for GDG on Campus B.Tech event",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "gdg",
+    "google-developer-groups",
+    "event-registration",
+    "btech",
+    "express",
+    "sqlite"
+  ],
+  "author": "GDG Club",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}

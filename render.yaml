@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: gdg-event-registration
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: EVENT_CAPACITY
+        value: "350"
+      - key: ADMIN_PASSWORD
+        value: "gdgadmin2026"
