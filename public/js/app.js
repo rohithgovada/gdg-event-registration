@@ -97,11 +97,24 @@ document.addEventListener('DOMContentLoaded', () => {
           navSeatsBadge.textContent = `${left} Seats Remaining`;
         }
 
-        // If seats are full
-        if (data.isFull) {
-          submitBtn.disabled = true;
-          submitBtn.innerHTML = `<span>⚠️ Registrations Full (350/350)</span>`;
+        // If 1-day registration window is closed or seats are full
+        if (data.isWindowClosed) {
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span>⚠️ 1-Day Registration Window Closed</span>`;
+          }
+          showAlert('danger', 'The 1-day (24-hour) registration window has officially ended! Please contact GDG club coordinators.');
+        } else if (data.isFull) {
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span>⚠️ Registrations Full (350/350)</span>`;
+          }
           showAlert('danger', 'Registration capacity of 350 has been reached! Please reach out to the GDG organizers for waitlist details.');
+        }
+
+        // Initialize / sync countdown with server's 1-day registration deadline
+        if (data.registrationDeadline) {
+          initCountdown(data.registrationDeadline);
         }
       }
     } catch (err) {
@@ -399,45 +412,51 @@ Show this pass with your College ID at entry!`;
     });
   }
 
-  // ----------------- COUNTDOWN TIMER ----------------- //
-  function initCountdown() {
-    // Target event date: 20 days in future or specific event date
-    const eventDate = new Date();
-    eventDate.setDate(eventDate.getDate() + 18);
-    eventDate.setHours(9, 30, 0, 0);
+  // ----------------- 1-DAY FLASH COUNTDOWN TIMER ----------------- //
+  let countdownTimerId = null;
 
-    const daysEl = document.getElementById('countDays');
+  function initCountdown(deadlineStr) {
+    if (countdownTimerId) clearInterval(countdownTimerId);
+
+    // Default: 24 hours from current session if server deadline is unavailable
+    const targetTime = deadlineStr 
+      ? new Date(deadlineStr).getTime() 
+      : (new Date().getTime() + 24 * 60 * 60 * 1000);
+
     const hoursEl = document.getElementById('countHours');
     const minsEl = document.getElementById('countMins');
     const secsEl = document.getElementById('countSecs');
 
-    if (!daysEl || !hoursEl || !minsEl || !secsEl) return;
+    if (!hoursEl || !minsEl || !secsEl) return;
 
     function update() {
       const now = new Date().getTime();
-      const diff = eventDate.getTime() - now;
+      const diff = targetTime - now;
 
       if (diff <= 0) {
-        daysEl.textContent = '00';
         hoursEl.textContent = '00';
         minsEl.textContent = '00';
         secsEl.textContent = '00';
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = `<span>⚠️ 1-Day Registration Window Closed</span>`;
+        }
+        showAlert('danger', 'The 1-day (24-hour) registration window has officially ended! No further submissions can be accepted.');
+        if (countdownTimerId) clearInterval(countdownTimerId);
         return;
       }
 
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const totalHours = Math.floor(diff / (1000 * 60 * 60));
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-      daysEl.textContent = String(days).padStart(2, '0');
-      hoursEl.textContent = String(hours).padStart(2, '0');
+      hoursEl.textContent = String(totalHours).padStart(2, '0');
       minsEl.textContent = String(minutes).padStart(2, '0');
       secsEl.textContent = String(seconds).padStart(2, '0');
     }
 
     update();
-    setInterval(update, 1000);
+    countdownTimerId = setInterval(update, 1000);
   }
 
   // ----------------- ALERTS ----------------- //

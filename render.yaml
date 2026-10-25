@@ -10,5 +10,7 @@ services:
         value: production
       - key: EVENT_CAPACITY
         value: "350"
+      - key: REGISTRATION_HOURS
+        value: "24"
       - key: ADMIN_PASSWORD
         value: "gdgadmin2026"

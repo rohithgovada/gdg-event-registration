@@ -8,6 +8,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const MAX_CAPACITY = parseInt(process.env.EVENT_CAPACITY, 10) || 350;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'gdgadmin2026';
+const REGISTRATION_HOURS = parseInt(process.env.REGISTRATION_HOURS, 10) || 24; // 1-Day (24-Hour) Registration Window
 
 // Middleware
 app.use(cors());
@@ -42,9 +43,33 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_roll_no ON registrations(roll_no);
   CREATE INDEX IF NOT EXISTS idx_ticket_id ON registrations(ticket_id);
+
+  CREATE TABLE IF NOT EXISTS event_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
 `);
 
+// Initialize 1-Day (24-Hour) Registration Window
+let deadlineRow = db.prepare('SELECT value FROM event_settings WHERE key = ?').get('registration_deadline');
+let registrationDeadline;
+if (!deadlineRow) {
+  const d = new Date();
+  d.setHours(d.getHours() + REGISTRATION_HOURS);
+  registrationDeadline = d.toISOString();
+  db.prepare('INSERT INTO event_settings (key, value) VALUES (?, ?)').run('registration_deadline', registrationDeadline);
+} else {
+  registrationDeadline = deadlineRow.value;
+}
+
+function isRegistrationOpen() {
+  const now = new Date().getTime();
+  const deadline = new Date(registrationDeadline).getTime();
+  return now < deadline;
+}
+
 console.log('Database initialized successfully at:', dbPath);
+console.log('1-Day Registration Deadline set to:', registrationDeadline);
 
 // Helper to generate unique Ticket ID: e.g. GDG-26-8742
 function generateTicketId() {
@@ -105,6 +130,9 @@ app.get('/api/stats', (req, res) => {
       totalRegistered,
       seatsLeft,
       isFull: seatsLeft <= 0,
+      registrationDeadline,
+      isWindowClosed: !isRegistrationOpen(),
+      windowDurationHours: REGISTRATION_HOURS,
       tracks: trackRows,
       branches: branchRows,
       years: yearRows
@@ -144,6 +172,14 @@ app.post('/api/register', (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Please enter a valid email address.'
+      });
+    }
+
+    // Check 1-Day Registration Window
+    if (!isRegistrationOpen()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Sorry, the 1-day (24-hour) registration window has officially closed! Please contact the GDG organizing team.'
       });
     }
 
