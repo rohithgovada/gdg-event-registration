@@ -16,12 +16,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Database Setup
-const dbPath = path.join(__dirname, 'registrations.db');
+// Database Setup (Supports local, Render, and Vercel environments)
+const isVercel = process.env.VERCEL === '1';
+const dbPath = isVercel ? path.join('/tmp', 'registrations.db') : path.join(__dirname, 'registrations.db');
 const db = new Database(dbPath);
 
 // Enable WAL Mode & busy timeout to prevent "database is locked" glitches under concurrent load
-db.pragma('journal_mode = WAL');
+if (!isVercel) {
+  try { db.pragma('journal_mode = WAL'); } catch (e) { /* ignore in non-WAL envs */ }
+}
 db.pragma('busy_timeout = 5000');
 
 // Initialize DB Tables
@@ -418,11 +421,15 @@ app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`=======================================================`);
-  console.log(`🚀 GDG Event Registration Portal running on http://localhost:${PORT}`);
-  console.log(`📊 Max Student Capacity: ${MAX_CAPACITY} members`);
-  console.log(`🔐 Admin Dashboard: http://localhost:${PORT}/admin (Password: ${ADMIN_PASSWORD})`);
-  console.log(`=======================================================`);
-});
+// Start Server (Standalone or Vercel export)
+if (!isVercel) {
+  app.listen(PORT, () => {
+    console.log(`=======================================================`);
+    console.log(`🚀 GDG Event Registration Portal running on http://localhost:${PORT}`);
+    console.log(`📊 Max Student Capacity: ${MAX_CAPACITY} members`);
+    console.log(`🔐 Admin Dashboard: http://localhost:${PORT}/admin (Password: ${ADMIN_PASSWORD})`);
+    console.log(`=======================================================`);
+  });
+}
+
+module.exports = app;
