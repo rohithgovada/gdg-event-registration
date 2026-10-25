@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GDG Organizer Admin Portal | Attendee Management</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="./css/styles.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            googleBlue: '#4285F4',
+            googleRed: '#EA4335',
+            googleYellow: '#FBBC05',
+            googleGreen: '#34A853',
+            darkBg: '#0A0E17',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-darkBg text-slate-100 min-h-screen antialiased">
+  
+  <div class="google-bar fixed top-0 left-0 right-0 z-50"></div>
+  <div class="cyber-bg"></div>
+
+  <!-- ==================== LOGIN SECTION ==================== -->
+  <section id="loginSection" class="min-h-screen flex items-center justify-center p-4">
+    <div class="glass-card max-w-md w-full p-8 rounded-3xl border border-slate-700/80 shadow-2xl">
+      
+      <div class="text-center mb-6">
+        <div class="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-700 flex items-center justify-center mx-auto mb-3">
+          <span class="gdg-brackets text-lg">
+            <span class="gdg-bracket-red">{</span>
+            <span class="gdg-bracket-blue">&lt;</span>
+            <span class="gdg-bracket-green">&gt;</span>
+            <span class="gdg-bracket-yellow">}</span>
+          </span>
+        </div>
+        <h2 class="text-2xl font-bold font-display text-white">Organizer Portal</h2>
+        <p class="text-xs text-slate-400 mt-1">Authorized GDG Leads &amp; Coordinators Only</p>
+      </div>
+
+      <div id="loginError" class="hidden p-3 rounded-xl bg-red-950/80 border border-red-500/50 text-red-200 text-xs mb-4 text-center"></div>
+
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label for="adminPassword" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+            Admin Access Key
+          </label>
+          <input 
+            type="password" 
+            id="adminPassword" 
+            required 
+            placeholder="Enter password (default: gdgadmin2026)"
+            class="form-input-custom w-full px-4 py-3 rounded-xl text-sm"
+          >
+        </div>
+
+        <button type="submit" class="w-full btn-google-primary py-3 rounded-xl font-bold text-sm">
+          Unlock Dashboard
+        </button>
+      </form>
+
+      <div class="mt-6 text-center">
+        <a href="./" class="text-xs text-slate-500 hover:text-slate-300 transition">← Back to Registration Website</a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==================== DASHBOARD SECTION ==================== -->
+  <section id="dashboardSection" class="hidden pb-20">
+    
+    <!-- Top Navbar -->
+    <header class="bg-slate-950/80 border-b border-slate-800/80 sticky top-0 z-40 backdrop-blur-md">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        
+        <div class="flex items-center gap-3">
+          <span class="gdg-brackets text-base">
+            <span class="gdg-bracket-red">{</span>
+            <span class="gdg-bracket-blue">&lt;</span>
+            <span class="gdg-bracket-green">&gt;</span>
+            <span class="gdg-bracket-yellow">}</span>
+          </span>
+          <span class="font-bold text-sm sm:text-base font-display">GDG Admin Console</span>
+          <span class="pill-badge pill-blue text-[10px]">Live Database</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <a href="./" target="_blank" class="text-xs text-slate-400 hover:text-white transition hidden sm:inline">
+            View Live Site ↗
+          </a>
+          <button id="logoutBtn" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-red-900/40 text-slate-300 hover:text-red-300 border border-slate-700 transition">
+            Log Out
+          </button>
+        </div>
+
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      
+      <!-- 1-Day Flash Window Banner -->
+      <div class="glass-card p-4 rounded-2xl border border-amber-500/30 bg-amber-950/20 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-googleYellow animate-ping"></span>
+          <span class="text-xs font-bold uppercase tracking-wider text-amber-300">⚡ 1-Day (24-Hour) Flash Registration Window Active</span>
+        </div>
+        <div class="text-xs text-slate-400 font-mono">
+          Event Capacity: <strong class="text-white">350 Seats</strong> • Auto-locks after 24 hrs
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        
+        <div class="glass-card p-4 rounded-2xl border-l-4 border-l-googleBlue">
+          <div class="text-xs text-slate-400 font-semibold uppercase">Total Registered</div>
+          <div id="totalCount" class="text-2xl font-bold font-mono text-white mt-1">0</div>
+        </div>
+
+        <div class="glass-card p-4 rounded-2xl border-l-4 border-l-googleYellow">
+          <div class="text-xs text-slate-400 font-semibold uppercase">Seats Left</div>
+          <div id="seatsLeft" class="text-2xl font-bold font-mono text-googleYellow mt-1">350</div>
+        </div>
+
+        <div class="glass-card p-4 rounded-2xl border-l-4 border-l-googleBlue">
+          <div class="text-xs text-slate-400 font-semibold uppercase">Tech Track</div>
+          <div id="techCount" class="text-2xl font-bold font-mono text-blue-400 mt-1">0</div>
+        </div>
+
+        <div class="glass-card p-4 rounded-2xl border-l-4 border-l-googleGreen">
+          <div class="text-xs text-slate-400 font-semibold uppercase">Non-Tech Track</div>
+          <div id="nonTechCount" class="text-2xl font-bold font-mono text-emerald-400 mt-1">0</div>
+        </div>
+
+        <div class="glass-card p-4 rounded-2xl border-l-4 border-l-purple-500">
+          <div class="text-xs text-slate-400 font-semibold uppercase">Both Tracks</div>
+          <div id="bothCount" class="text-2xl font-bold font-mono text-purple-400 mt-1">0</div>
+        </div>
+
+        <div class="glass-card p-4 rounded-2xl border-l-4 border-l-googleRed">
+          <div class="text-xs text-slate-400 font-semibold uppercase">Checked In</div>
+          <div id="attendedCount" class="text-2xl font-bold font-mono text-emerald-400 mt-1">0</div>
+        </div>
+
+      </div>
+
+      <!-- Event Day Check-In Desk Tool -->
+      <div class="glass-card p-6 rounded-2xl border border-slate-700/80 mb-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h3 class="text-lg font-bold font-display text-white flex items-center gap-2">
+              <span>🎟️ Event Day Desk Check-In</span>
+              <span class="pill-badge pill-green text-[10px]">Volunteer Tool</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">
+              Scan barcode / enter Student Roll Number or Ticket ID (e.g. 22B91A0501 or GDG-26-XXXX) for instant check-in.
+            </p>
+          </div>
+
+          <form id="checkinForm" class="flex items-center gap-2 w-full md:w-auto">
+            <input 
+              type="text" 
+              id="checkinInput" 
+              required 
+              placeholder="Roll No or Ticket ID"
+              class="form-input-custom px-4 py-2.5 rounded-xl text-xs font-mono uppercase w-full md:w-64"
+            >
+            <button type="submit" class="btn-google-primary px-5 py-2.5 rounded-xl text-xs font-bold shrink-0">
+              Check In
+            </button>
+          </form>
+        </div>
+
+        <div id="checkinFeedback" class="hidden"></div>
+      </div>
+
+      <!-- Controls & Filter Toolbar -->
+      <div class="glass-card p-5 rounded-2xl border border-slate-700/80 mb-6">
+        <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+          
+          <!-- Search input -->
+          <div class="relative flex-1">
+            <input 
+              type="text" 
+              id="tableSearch" 
+              placeholder="Search by name, roll no, email, ticket..."
+              class="form-input-custom w-full px-4 py-2.5 rounded-xl text-xs placeholder:text-slate-500"
+            >
+          </div>
+
+          <!-- Filters -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            
+            <select id="branchFilter" class="form-input-custom form-select-custom px-3 py-2.5 rounded-xl text-xs">
+              <option value="">All Branches</option>
+              <option value="CSE (Computer Science)">CSE</option>
+              <option value="CSE - AI & ML">CSE - AI/ML</option>
+              <option value="CSE - Data Science">CSE - DS</option>
+              <option value="CSE - Cyber Security">CSE - Cyber</option>
+              <option value="IT (Information Technology)">IT</option>
+              <option value="ECE (Electronics & Comm)">ECE</option>
+              <option value="EEE (Electrical & Electronics)">EEE</option>
+              <option value="Mechanical Engineering">Mechanical</option>
+              <option value="Civil Engineering">Civil</option>
+            </select>
+
+            <select id="yearFilter" class="form-input-custom form-select-custom px-3 py-2.5 rounded-xl text-xs">
+              <option value="">All Years</option>
+              <option value="1st Year">1st Year</option>
+              <option value="2nd Year">2nd Year</option>
+              <option value="3rd Year">3rd Year</option>
+              <option value="4th Year">4th Year</option>
+            </select>
+
+            <select id="trackFilter" class="form-input-custom form-select-custom px-3 py-2.5 rounded-xl text-xs col-span-2 sm:col-span-1">
+              <option value="">All Tracks</option>
+              <option value="Tech Track">Tech Track</option>
+              <option value="Non-Tech Track">Non-Tech Track</option>
+              <option value="Both Tracks">Both Tracks</option>
+            </select>
+
+          </div>
+
+          <!-- Actions: Export CSV & Refresh -->
+          <div class="flex items-center gap-3">
+            <button id="refreshBtn" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="Refresh Table">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            </button>
+
+            <button id="exportCsvBtn" class="btn-google-primary px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+              <span>Export CSV (Excel)</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Registrations Data Table -->
+      <div class="glass-card rounded-2xl border border-slate-700/80 overflow-hidden shadow-2xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-900/90 text-slate-400 uppercase font-mono border-b border-slate-800">
+              <tr>
+                <th class="py-3 px-4">#</th>
+                <th class="py-3 px-4">Ticket ID</th>
+                <th class="py-3 px-4">Student &amp; Roll No</th>
+                <th class="py-3 px-4">Contact Info</th>
+                <th class="py-3 px-4">Branch &amp; Year</th>
+                <th class="py-3 px-4">Track</th>
+                <th class="py-3 px-4">Status</th>
+              </tr>
+            </thead>
+            <tbody id="registrationsTableBody" class="divide-y divide-slate-800/60">
+              <tr>
+                <td colspan="7" class="text-center py-8 text-slate-500">
+                  Loading registrations...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </section>
+
+  <script src="./js/admin.js"></script>
+</body>
+</html>

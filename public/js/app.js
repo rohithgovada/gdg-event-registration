@@ -3,6 +3,10 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+  // ⚡ Google Sheets Backend Integration (Optional for GitHub Pages)
+  // If you connect your GitHub Pages site to a Google Sheet, paste your Web App URL here:
+  const GOOGLE_SHEET_URL = "";
+
   // Elements
   const regForm = document.getElementById('registrationForm');
   const submitBtn = document.getElementById('submitBtn');
@@ -77,8 +81,26 @@ document.addEventListener('DOMContentLoaded', () => {
   // ----------------- STATS FETCHER ----------------- //
   async function fetchLiveStats() {
     try {
-      const res = await fetch('/api/stats');
-      const data = await res.json();
+      let data;
+      if (GOOGLE_SHEET_URL) {
+        const res = await fetch(GOOGLE_SHEET_URL);
+        data = await res.json();
+      } else if (window.location.hostname.endsWith('github.io') || window.location.protocol === 'file:') {
+        const localRegs = JSON.parse(localStorage.getItem('gdg_registrations') || '[]');
+        const total = localRegs.length;
+        const max = 350;
+        data = {
+          success: true,
+          totalRegistered: total,
+          maxCapacity: max,
+          seatsLeft: Math.max(0, max - total),
+          isFull: total >= max,
+          isWindowClosed: false
+        };
+      } else {
+        const res = await fetch('/api/stats');
+        data = await res.json();
+      }
       if (data.success) {
         const total = data.totalRegistered;
         const max = data.maxCapacity;
@@ -161,24 +183,84 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
 
       try {
-        const response = await fetch('/api/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            full_name: fullName,
-            roll_no: rollNo,
+        let result;
+
+        if (GOOGLE_SHEET_URL) {
+          // Submit directly to Google Sheet
+          const response = await fetch(GOOGLE_SHEET_URL, {
+            method: 'POST',
+            mode: 'cors',
+            body: JSON.stringify({
+              full_name: fullName,
+              roll_no: rollNo,
+              email,
+              phone,
+              branch,
+              year,
+              track,
+              interest
+            })
+          });
+          result = await response.json();
+        } else if (window.location.hostname.endsWith('github.io') || window.location.protocol === 'file:') {
+          // GitHub Pages Standalone Mode
+          const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+          let randomPart = '';
+          for (let i = 0; i < 4; i++) {
+            randomPart += chars.charAt(Math.floor(Math.random() * chars.length));
+          }
+          const ticketId = `GDG-26-${randomPart}`;
+          const currentLocalRegs = JSON.parse(localStorage.getItem('gdg_registrations') || '[]');
+          
+          // Duplicate check
+          const isDup = currentLocalRegs.some(r => (r.rollNo || '').toUpperCase() === rollNo.toUpperCase());
+          if (isDup) {
+            showAlert('danger', `Roll Number "${rollNo}" is already registered!`);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnHtml;
+            return;
+          }
+
+          const newReg = {
+            ticketId,
+            fullName,
+            rollNo: rollNo.toUpperCase(),
             email,
             phone,
             branch,
             year,
             track,
-            interest
-          })
-        });
+            interest,
+            registrationNumber: currentLocalRegs.length + 1
+          };
+          currentLocalRegs.push(newReg);
+          localStorage.setItem('gdg_registrations', JSON.stringify(currentLocalRegs));
+          localStorage.setItem('gdg_my_ticket', JSON.stringify(newReg));
 
-        const result = await response.json();
+          result = {
+            success: true,
+            registration: newReg
+          };
+        } else {
+          // Local Node.js server
+          const response = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              full_name: fullName,
+              roll_no: rollNo,
+              email,
+              phone,
+              branch,
+              year,
+              track,
+              interest
+            })
+          });
+          result = await response.json();
+        }
 
-        if (response.ok && result.success) {
+        if (result && result.success) {
           // Trigger confetti!
           triggerConfetti();
 
@@ -386,6 +468,22 @@ Show this pass with your College ID at entry!`;
       e.preventDefault();
       const identifier = lookupInput.value.trim();
       if (!identifier) return;
+
+      // Check local storage if on GitHub Pages
+      if (window.location.hostname.endsWith('github.io') || window.location.protocol === 'file:') {
+        const localRegs = JSON.parse(localStorage.getItem('gdg_registrations') || '[]');
+        const found = localRegs.find(r => 
+          (r.rollNo && r.rollNo.toUpperCase() === identifier.toUpperCase()) || 
+          (r.ticketId && r.ticketId.toUpperCase() === identifier.toUpperCase())
+        );
+
+        if (found) {
+          lookupModal.classList.add('hidden');
+          renderTicket(found);
+          ticketModal.classList.remove('hidden');
+          return;
+        }
+      }
 
       try {
         const res = await fetch(`/api/ticket/${encodeURIComponent(identifier)}`);
